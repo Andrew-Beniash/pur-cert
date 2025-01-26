@@ -3,6 +3,12 @@
 ./postcss.config.mjs
 ./jest.config.js
 ./export_tree.sh
+./backend/jest.config.js
+./backend/package-lock.json
+./backend/package.json
+./backend/tsconfig.json
+./backend/src/tests/server.test.ts
+./backend/src/server.ts
 ./next-env.d.ts
 ./README.md
 ./tailwind.config.ts
