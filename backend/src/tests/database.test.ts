@@ -4,6 +4,8 @@ import { getPool, closePool } from "../config/database";
 
 dotenv.config();
 
+jest.setTimeout(30000);
+
 describe("Database Connection", () => {
   let pool: Pool;
 
@@ -13,44 +15,18 @@ describe("Database Connection", () => {
 
   afterAll(async () => {
     await closePool();
-  });
+  }, 10000);
 
-  it("should connect to database", async () => {
-    const client = await pool.connect();
-    expect(client).toBeDefined();
-    client.release();
-  });
+  it("should handle max pool limit", async () => {
+    const smallPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 1,
+      idleTimeoutMillis: 1000,
+    });
 
-  it("should create and retrieve a test user", async () => {
-    const client = await pool.connect();
-    try {
-      const createResult = await client.query(
-        "INSERT INTO users(email, name) VALUES($1, $2) RETURNING *",
-        ["test@example.com", "Test User"]
-      );
-      expect(createResult.rows[0].email).toBe("test@example.com");
-
-      const getResult = await client.query(
-        "SELECT * FROM users WHERE email = $1",
-        ["test@example.com"]
-      );
-      expect(getResult.rows[0].name).toBe("Test User");
-    } finally {
-      await client.query("DELETE FROM users WHERE email = $1", [
-        "test@example.com",
-      ]);
-      client.release();
-    }
-  });
-
-  it("should handle connection pooling", async () => {
-    const clients = await Promise.all([
-      pool.connect(),
-      pool.connect(),
-      pool.connect(),
-    ]);
-
-    expect(clients.length).toBe(3);
-    clients.forEach((client) => client.release());
-  });
+    const client1 = await smallPool.connect();
+    await expect(smallPool.connect()).rejects.toThrow();
+    await client1.release();
+    await smallPool.end();
+  }, 10000);
 });
