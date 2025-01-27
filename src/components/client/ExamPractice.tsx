@@ -26,6 +26,22 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
       .padStart(2, "0")}`;
   };
 
+  const calculateExamScore = useCallback(() => {
+    const correctAnswers = selectedAnswers.filter((answer) => {
+      const question = exam.questions.find((q) => q.id === answer.questionId);
+      return question && question.correctAnswer === answer.selectedOption;
+    }).length;
+
+    const totalQuestions = exam.questions.length;
+    const score = (correctAnswers / totalQuestions) * 100;
+
+    return {
+      correctAnswers,
+      totalQuestions,
+      score: Math.round(score),
+    };
+  }, [exam.questions, selectedAnswers]);
+
   const handleAnswerSelect = (optionIndex: number) => {
     setSelectedAnswers((prev) => {
       const newAnswers = [...prev];
@@ -59,11 +75,16 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
   const handleExamComplete = useCallback(() => {
     if (!isExamComplete) {
       setIsExamComplete(true);
+      const { correctAnswers, totalQuestions, score } = calculateExamScore();
+
       const result: ExamResult = {
         examId: exam.id,
         answers: selectedAnswers,
         timeSpent: exam.timeLimit * 60 - timeRemaining,
         completedAt: new Date(),
+        correctAnswers,
+        totalQuestions,
+        score,
       };
       onComplete(result);
     }
@@ -74,6 +95,7 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
     onComplete,
     selectedAnswers,
     timeRemaining,
+    calculateExamScore,
   ]);
 
   useEffect(() => {
@@ -98,6 +120,88 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
     return currentAnswer?.selectedOption;
   };
 
+  if (isExamComplete) {
+    const { correctAnswers, totalQuestions, score } = calculateExamScore();
+
+    return (
+      <div className="min-h-screen bg-gray-50 px-4 py-6">
+        <div
+          className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6"
+          data-testid="exam-summary"
+        >
+          <h1 className="text-2xl font-bold mb-6">Exam Complete</h1>
+
+          <div className="grid gap-4 mb-8">
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h2 className="text-lg font-semibold mb-2">Summary</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-600">Total Questions</p>
+                  <p className="text-xl font-medium">{totalQuestions}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Correct Answers</p>
+                  <p className="text-xl font-medium">{correctAnswers}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Time Spent</p>
+                  <p className="text-xl font-medium">
+                    {formatTime(exam.timeLimit * 60 - timeRemaining)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Score</p>
+                  <p className="text-xl font-medium" data-testid="exam-score">
+                    {score}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Detailed Review</h2>
+              {exam.questions.map((question, index) => {
+                const userAnswer = selectedAnswers.find(
+                  (answer) => answer.questionId === question.id
+                );
+                const isCorrect =
+                  userAnswer?.selectedOption === question.correctAnswer;
+
+                return (
+                  <div
+                    key={question.id}
+                    className="p-4 border rounded-lg"
+                    data-testid={`question-${question.id}-result`}
+                  >
+                    <p className="font-medium mb-2">
+                      Question {index + 1}: {question.text}
+                    </p>
+                    <div className="ml-4">
+                      <p
+                        className={`font-medium ${
+                          isCorrect ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        Your Answer:{" "}
+                        {question.options[userAnswer?.selectedOption || 0]}
+                      </p>
+                      {!isCorrect && (
+                        <p className="text-green-600 mt-1">
+                          Correct Answer:{" "}
+                          {question.options[question.correctAnswer]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm p-6">
@@ -117,7 +221,7 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
             </div>
             <ExamTimer
               timeRemaining={timeRemaining}
-              isWarning={timeRemaining < 300} // Warning when less than 5 minutes remaining
+              isWarning={timeRemaining < 300}
             />
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -166,7 +270,7 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
           </button>
           <div className="flex gap-4">
             <button
-              onClick={() => handleNext()}
+              onClick={handleNext}
               className="btn-primary px-6 py-2"
               aria-label={
                 currentQuestionIndex === exam.questions.length - 1

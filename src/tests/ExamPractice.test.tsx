@@ -99,3 +99,97 @@ describe("ExamPractice Component", () => {
     expect(onCompleteMock).toHaveBeenCalled();
   });
 });
+
+describe("Exam Summary", () => {
+  it("displays exam summary after completion", () => {
+    const onCompleteMock = jest.fn();
+    render(<ExamPractice exam={mockExam} onComplete={onCompleteMock} />);
+
+    // Complete the exam
+    mockExam.questions.forEach((_, index) => {
+      const answer = screen.getByText(mockExam.questions[index].options[0]);
+      fireEvent.click(answer);
+      const nextButton = screen.getByRole("button", {
+        name: index === mockExam.questions.length - 1 ? /finish/i : /next/i,
+      });
+      fireEvent.click(nextButton);
+    });
+
+    // Check summary elements
+    expect(screen.getByTestId("exam-summary")).toBeInTheDocument();
+    expect(screen.getByText(/exam complete/i)).toBeInTheDocument();
+    expect(screen.getByText(/total questions/i)).toBeInTheDocument();
+    expect(screen.getByText(/correct answers/i)).toBeInTheDocument();
+    expect(screen.getByText(/time spent/i)).toBeInTheDocument();
+  });
+
+  it("calculates score correctly", () => {
+    const onCompleteMock = jest.fn();
+    render(<ExamPractice exam={mockExam} onComplete={onCompleteMock} />);
+
+    // Answer all questions correctly
+    mockExam.questions.forEach((question, index) => {
+      const correctAnswerIndex = question.correctAnswer;
+      const answer = screen.getByText(question.options[correctAnswerIndex]);
+      fireEvent.click(answer);
+      const nextButton = screen.getByRole("button", {
+        name: index === mockExam.questions.length - 1 ? /finish/i : /next/i,
+      });
+      fireEvent.click(nextButton);
+    });
+
+    const scoreElement = screen.getByTestId("exam-score");
+    expect(scoreElement).toHaveTextContent("100%");
+  });
+
+  it("shows detailed answer review", () => {
+    const onCompleteMock = jest.fn();
+    render(<ExamPractice exam={mockExam} onComplete={onCompleteMock} />);
+
+    // Complete exam with mixed answers
+    mockExam.questions.forEach((_, index) => {
+      const answer = screen.getByText(mockExam.questions[index].options[0]);
+      fireEvent.click(answer);
+      const nextButton = screen.getByRole("button", {
+        name: index === mockExam.questions.length - 1 ? /finish/i : /next/i,
+      });
+      fireEvent.click(nextButton);
+    });
+
+    // Check if each question review is displayed
+    mockExam.questions.forEach((question) => {
+      expect(screen.getByText(question.text)).toBeInTheDocument();
+      expect(
+        screen.getByTestId(`question-${question.id}-result`)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("displays correct and incorrect answers with explanations", () => {
+    const onCompleteMock = jest.fn();
+    render(<ExamPractice exam={mockExam} onComplete={onCompleteMock} />);
+
+    // Answer questions with a mix of correct and incorrect answers
+    mockExam.questions.forEach((question, index) => {
+      // Deliberately choose first option for all questions
+      const answer = screen.getByText(question.options[0]);
+      fireEvent.click(answer);
+      const nextButton = screen.getByRole("button", {
+        name: index === mockExam.questions.length - 1 ? /finish/i : /next/i,
+      });
+      fireEvent.click(nextButton);
+    });
+
+    // Verify correct/incorrect indicators
+    mockExam.questions.forEach((question) => {
+      const resultElement = screen.getByTestId(
+        `question-${question.id}-result`
+      );
+      if (question.correctAnswer === 0) {
+        expect(resultElement).toHaveClass("text-green-600");
+      } else {
+        expect(resultElement).toHaveClass("text-red-600");
+      }
+    });
+  });
+});
