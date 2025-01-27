@@ -1,37 +1,56 @@
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
+import { useState } from "react";
 
 export default function Login() {
   const { data: session, status } = useSession();
+  const [error, setError] = useState<string | null>(null);
 
   if (status === "loading") {
     return (
       <div className="flex justify-center items-center h-screen">
-        Loading...
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
       </div>
     );
   }
 
+  const handleSignIn = async () => {
+    try {
+      const result = await signIn("google", { callbackUrl: "/dashboard" });
+      if (result?.error) {
+        setError("Failed to sign in with Google");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <div className="p-8 bg-white rounded-lg shadow-md">
+        {error && (
+          <div className="mb-4 p-2 bg-red-100 text-red-600 rounded">
+            {error}
+          </div>
+        )}
+
         {session ? (
           <div className="space-y-4">
             <p className="text-center text-gray-700">
               Signed in as {session.user?.name}
             </p>
             <button
-              onClick={() => signOut()}
-              className="w-full px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="w-full px-4 py-2 text-white bg-red-500 rounded hover:bg-red-600 transition-colors"
             >
               Sign out
             </button>
           </div>
         ) : (
           <button
-            onClick={() => signIn("google")}
-            className="flex items-center justify-center px-4 py-2 space-x-2 text-white bg-blue-500 rounded hover:bg-blue-600"
+            onClick={handleSignIn}
+            className="flex items-center justify-center px-4 py-2 space-x-2 text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path

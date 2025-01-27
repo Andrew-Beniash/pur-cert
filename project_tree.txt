@@ -2,6 +2,7 @@
 ./types/jest.d.ts
 ./types/next-auth.d.ts
 ./project_tree.txt
+./.DS_Store
 ./.env.local
 ./jest.setup.js
 ./postcss.config.mjs
@@ -20,6 +21,7 @@
 ./backend/src/migrations/002_add_indexes.sql
 ./backend/src/.DS_Store
 ./backend/src/config/database.ts
+./backend/src/tests/auth-backend-tests.ts
 ./backend/src/tests/structure.test.ts
 ./backend/src/tests/database.test.ts
 ./backend/src/tests/oauth.test.ts
@@ -51,6 +53,7 @@
 ./next.config.ts
 ./src/.DS_Store
 ./src/app/favicon.ico
+./src/app/.DS_Store
 ./src/app/layout.tsx
 ./src/app/api/auth/.DS_Store
 ./src/app/api/auth/[...nextauth]/route.ts

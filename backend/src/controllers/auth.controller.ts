@@ -1,33 +1,42 @@
-import { Request, Response } from "express";
-import { OAuth2Client } from "google-auth-library";
+import { Request, Response, Router } from "express";
+import { createUser, User } from "../models/user.model";
 
-const client = new OAuth2Client({
-  clientId: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  redirectUri: `${process.env.BACKEND_URL}/auth/google/callback`,
-});
-
-export const googleAuth = (req: Request, res: Response) => {
-  const authUrl = client.generateAuthUrl({
-    scope: ["email", "profile"],
-  });
-  res.redirect(authUrl);
+type GoogleAuthBody = {
+  user: {
+    email: string;
+    name?: string;
+  };
+  account: {
+    providerAccountId: string;
+  };
 };
 
-export const googleCallback = async (req: Request, res: Response) => {
+export const handleGoogleAuth = async (
+  req: Request<{}, {}, GoogleAuthBody>,
+  res: Response
+) => {
   try {
-    const { code } = req.query;
-    const { tokens } = await client.getToken(code as string);
-    const ticket = await client.verifyIdToken({
-      idToken: tokens.id_token!,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
+    const { user, account } = req.body;
 
-    // Store user in database here
+    if (!user?.email || !account?.providerAccountId) {
+      return res.status(400).json({ error: "Invalid user data" });
+    }
 
-    res.json({ token: tokens.access_token });
+    const userData: Partial<User> = {
+      email: user.email,
+      name: user.name,
+      google_id: account.providerAccountId,
+    };
+
+    const dbUser = await createUser(userData);
+    return res.status(200).json({ success: true, user: dbUser });
   } catch (error) {
-    res.status(401).json({ error: "Authentication failed" });
+    console.error("Error storing user:", error);
+    return res.status(500).json({ error: "Failed to store user data" });
   }
 };
+
+const router = Router();
+router.post("/google", handleGoogleAuth as any);
+
+export { router as authRouter };

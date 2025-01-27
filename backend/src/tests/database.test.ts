@@ -17,9 +17,15 @@ describe("Database Connection", () => {
     await closePool();
   }, 10000);
 
+  it("should connect to database", async () => {
+    const result = await pool.query("SELECT NOW()");
+    expect(result.rows).toHaveLength(1);
+  });
+
   it("should handle max pool limit", async () => {
     const smallPool = new Pool({
       connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
       max: 1,
       idleTimeoutMillis: 1000,
     });
@@ -29,4 +35,15 @@ describe("Database Connection", () => {
     await client1.release();
     await smallPool.end();
   }, 10000);
+
+  it("should handle connection timeouts", async () => {
+    const timeoutPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      connectionTimeoutMillis: 1,
+    });
+
+    await expect(timeoutPool.connect()).rejects.toThrow();
+    await timeoutPool.end();
+  });
 });

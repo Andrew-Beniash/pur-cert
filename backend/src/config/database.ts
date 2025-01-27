@@ -1,39 +1,46 @@
 import { Pool } from "pg";
-import * as dotenv from "dotenv";
+import dotenv from "dotenv";
 
 dotenv.config();
 
 let pool: Pool | null = null;
 
-const getPool = async (): Promise<Pool> => {
+export const getPool = async (): Promise<Pool> => {
   if (pool) return pool;
 
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-    max: 20,
-    idleTimeoutMillis: 30000,
-  });
+  const isProduction = process.env.NODE_ENV === "production";
 
+  const config = {
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: parseInt(process.env.DB_PORT || "5432"),
+    // Only use SSL in production
+    ssl: isProduction
+      ? {
+          rejectUnauthorized: false,
+        }
+      : false,
+  };
+
+  pool = new Pool(config);
+
+  // Test the connection
   try {
     const client = await pool.connect();
+    console.log("Database connection successful");
     client.release();
-    console.log("Database connected successfully");
+    return pool;
   } catch (err) {
     console.error("Database connection error:", err);
     throw err;
   }
-
-  return pool;
 };
 
-const closePool = async (): Promise<void> => {
+// Clean up the pool when the application shuts down
+process.on("SIGINT", async () => {
   if (pool) {
     await pool.end();
-    pool = null;
   }
-};
-
-export { getPool, closePool };
+});
