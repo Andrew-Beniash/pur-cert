@@ -1,5 +1,6 @@
 import ClientProvider from "../components/providers/ClientProvider";
 import Navigation from "../components/Navigation";
+import BackgroundAnimation from "../components/BackgroundAnimation";
 import "../app/globals.css";
 
 export default function RootLayout({
@@ -11,6 +12,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ClientProvider>
+          <BackgroundAnimation opacity={1.2} />
           <Navigation />
           <main>{children}</main>
         </ClientProvider>

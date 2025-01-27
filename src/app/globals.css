@@ -4,19 +4,19 @@
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-all duration-200 ease-in-out;
+    @apply px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-all duration-200 ease-in-out;
   }
 
   .btn-secondary {
-    @apply bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .nav-link {
-    @apply relative inline-flex items-center px-3 py-2 text-sm font-medium transition-all duration-200 ease-in-out;
+    @apply relative inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 transition-all duration-200 ease-in-out hover:text-blue-500;
   }
 
   .nav-link-active {
-    @apply text-primary-500 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary-500;
+    @apply text-blue-500 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-blue-500;
   }
 
   .nav-link-inactive {
@@ -28,6 +28,6 @@
   }
 
   .input-field {
-    @apply px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500;
+    @apply px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
   }
 }
