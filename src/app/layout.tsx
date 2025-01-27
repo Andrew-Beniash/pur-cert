@@ -1,4 +1,6 @@
 import ClientProvider from "../components/providers/ClientProvider";
+import Navigation from "../components/Navigation";
+import "../app/globals.css";
 
 export default function RootLayout({
   children,
@@ -8,7 +10,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ClientProvider>{children}</ClientProvider>
+        <ClientProvider>
+          <Navigation />
+          <main>{children}</main>
+        </ClientProvider>
       </body>
     </html>
   );

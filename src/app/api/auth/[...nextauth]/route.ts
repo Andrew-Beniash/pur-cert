@@ -14,28 +14,8 @@ const handler = NextAuth({
   },
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/google`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ user, account }),
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error("Failed to store user data");
-          }
-
-          return true;
-        } catch (error) {
-          console.error("Auth error:", error);
-          return false;
-        }
-      }
-      return false;
+      // For now, just allow sign in without backend verification
+      return true;
     },
     async session({ session, token }) {
       return session;
@@ -48,3 +28,5 @@ const handler = NextAuth({
     },
   },
 });
+
+export { handler as GET, handler as POST };

@@ -4,9 +4,30 @@
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 bg-primary text-white rounded-md hover:bg-opacity-90;
+    @apply px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-all duration-200 ease-in-out;
   }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-primary-500 border border-primary-500 rounded-md hover:bg-primary-50 transition-all duration-200 ease-in-out;
+  }
+
+  .nav-link {
+    @apply relative inline-flex items-center px-3 py-2 text-sm font-medium transition-all duration-200 ease-in-out;
+  }
+
+  .nav-link-active {
+    @apply text-primary-500 after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary-500;
+  }
+
+  .nav-link-inactive {
+    @apply text-secondary-600 hover:text-primary-500;
+  }
+
+  .nav-button {
+    @apply inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ease-in-out;
+  }
+
   .input-field {
-    @apply px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary;
+    @apply px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500;
   }
 }
