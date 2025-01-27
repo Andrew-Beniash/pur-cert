@@ -193,3 +193,64 @@ describe("Exam Summary", () => {
     });
   });
 });
+
+describe("Question Explanations", () => {
+  it("does not show explanation while answering questions", () => {
+    render(<ExamPractice exam={mockExam} onComplete={() => {}} />);
+
+    // Select an answer
+    const firstAnswer = screen.getByText(mockExam.questions[0].options[0]);
+    fireEvent.click(firstAnswer);
+
+    // Verify explanation is not shown
+    expect(screen.queryByText("Explanation:")).not.toBeInTheDocument();
+  });
+
+  it("shows explanations in the final review", () => {
+    const onCompleteMock = jest.fn();
+    render(<ExamPractice exam={mockExam} onComplete={onCompleteMock} />);
+
+    // Complete the exam
+    mockExam.questions.forEach((question, index) => {
+      const answer = screen.getByText(question.options[0]);
+      fireEvent.click(answer);
+      const nextButton = screen.getByRole("button", {
+        name: index === mockExam.questions.length - 1 ? /finish/i : /next/i,
+      });
+      fireEvent.click(nextButton);
+    });
+
+    // Verify all explanations are shown in review
+    mockExam.questions.forEach((question) => {
+      expect(screen.getByText(question.explanation)).toBeInTheDocument();
+    });
+  });
+
+  it("displays correct explanations with corresponding questions in review", () => {
+    const onCompleteMock = jest.fn();
+    render(<ExamPractice exam={mockExam} onComplete={onCompleteMock} />);
+
+    // Complete the exam
+    mockExam.questions.forEach((question, index) => {
+      const answer = screen.getByText(question.options[0]);
+      fireEvent.click(answer);
+      const nextButton = screen.getByRole("button", {
+        name: index === mockExam.questions.length - 1 ? /finish/i : /next/i,
+      });
+      fireEvent.click(nextButton);
+    });
+
+    // Verify each question has its correct explanation
+    mockExam.questions.forEach((question, index) => {
+      const questionElement = screen.getByText(
+        `Question ${index + 1}: ${question.text}`
+      );
+      const explanationElement = screen.getByText(question.explanation);
+
+      // Check if explanation is within the same question container
+      expect(questionElement.closest("[data-testid]")).toContainElement(
+        explanationElement
+      );
+    });
+  });
+});

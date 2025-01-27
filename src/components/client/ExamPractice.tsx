@@ -15,8 +15,24 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
   const [selectedAnswers, setSelectedAnswers] = useState<ExamAnswer[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(exam.timeLimit * 60);
   const [isExamComplete, setIsExamComplete] = useState(false);
+  const [isReviewMode, setIsReviewMode] = useState(false);
 
   const currentQuestion: Question = exam.questions[currentQuestionIndex];
+
+  const getCurrentAnswerIndex = () => {
+    const currentAnswer = selectedAnswers.find(
+      (answer) => answer.questionId === currentQuestion.id
+    );
+    return currentAnswer?.selectedOption;
+  };
+
+  const handleNext = () => {
+    if (currentQuestionIndex < exam.questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+    } else {
+      handleExamComplete();
+    }
+  };
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -64,17 +80,10 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
     });
   };
 
-  const handleNext = () => {
-    if (currentQuestionIndex < exam.questions.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1);
-    } else {
-      handleExamComplete();
-    }
-  };
-
   const handleExamComplete = useCallback(() => {
     if (!isExamComplete) {
       setIsExamComplete(true);
+      setIsReviewMode(true);
       const { correctAnswers, totalQuestions, score } = calculateExamScore();
 
       const result: ExamResult = {
@@ -97,28 +106,6 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
     timeRemaining,
     calculateExamScore,
   ]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleExamComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [handleExamComplete]);
-
-  const getCurrentAnswerIndex = () => {
-    const currentAnswer = selectedAnswers.find(
-      (answer) => answer.questionId === currentQuestion.id
-    );
-    return currentAnswer?.selectedOption;
-  };
 
   if (isExamComplete) {
     const { correctAnswers, totalQuestions, score } = calculateExamScore();
@@ -191,6 +178,18 @@ const ExamPractice: React.FC<ExamPracticeProps> = ({ exam, onComplete }) => {
                           {question.options[question.correctAnswer]}
                         </p>
                       )}
+                      <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                        {" "}
+                        {/* Added border for visibility */}
+                        <p className="font-medium text-gray-700 mb-2">
+                          Explanation:
+                        </p>{" "}
+                        {/* Added margin-bottom */}
+                        <p className="text-gray-600">
+                          {question.explanation || "No explanation available"}
+                        </p>{" "}
+                        {/* Added fallback text */}
+                      </div>
                     </div>
                   </div>
                 );
