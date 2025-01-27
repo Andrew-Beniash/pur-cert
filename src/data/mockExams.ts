@@ -1,41 +1,64 @@
-// src/data/mockExams.ts
-import type { Exam } from "../types/dashboard";
+import { Exam } from "../types/dashboard";
+
+export interface Question {
+  id: number;
+  text: string;
+  options: string[];
+  correctAnswer: number;
+}
+
+export interface DetailedExam extends Exam {
+  questions: Question[];
+}
+
+export const mockExam: DetailedExam = {
+  id: 1,
+  title: "Sample Certification Exam",
+  totalQuestions: 3,
+  timeLimit: 60,
+  questions: [
+    {
+      id: 1,
+      text: "What is the primary purpose of a RESTful API?",
+      options: [
+        "To provide a standardized way for applications to communicate",
+        "To create user interfaces",
+        "To store data in a database",
+        "To manage server hardware",
+      ],
+      correctAnswer: 0,
+    },
+    {
+      id: 2,
+      text: "Which HTTP method is used to retrieve data from a server?",
+      options: ["POST", "GET", "PUT", "DELETE"],
+      correctAnswer: 1,
+    },
+    {
+      id: 3,
+      text: "What does JWT stand for?",
+      options: [
+        "Java Web Token",
+        "JavaScript Web Token",
+        "JSON Web Token",
+        "JSON With Type",
+      ],
+      correctAnswer: 2,
+    },
+  ],
+};
 
 export const mockExams: Exam[] = [
   {
     id: 1,
-    title: "AWS Certified Cloud Practitioner",
-    totalQuestions: 65,
-    timeLimit: 90,
+    title: "Sample Certification Exam",
+    totalQuestions: 3,
+    timeLimit: 60,
   },
   {
     id: 2,
-    title: "Azure Fundamentals AZ-900",
-    totalQuestions: 60,
-    timeLimit: 85,
-  },
-  {
-    id: 3,
-    title: "CompTIA A+",
-    totalQuestions: 90,
+    title: "Advanced Web Development",
+    totalQuestions: 5,
     timeLimit: 90,
-  },
-  {
-    id: 4,
-    title: "CISSP",
-    totalQuestions: 100,
-    timeLimit: 180,
-  },
-  {
-    id: 5,
-    title: "PMP Certification",
-    totalQuestions: 180,
-    timeLimit: 230,
-  },
-  {
-    id: 6,
-    title: "Google Cloud Associate Engineer",
-    totalQuestions: 50,
-    timeLimit: 120,
   },
 ];

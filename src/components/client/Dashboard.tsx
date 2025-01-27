@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useSession } from "next-auth/react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import type { Exam } from "../../types/dashboard";
+import { mockExam } from "../../data/mockExams";
+import ExamPractice from "./ExamPractice";
 
 interface DashboardProps {
   exams: Exam[];
@@ -12,10 +14,27 @@ interface DashboardProps {
 const Dashboard = ({ exams }: DashboardProps) => {
   const { data: session } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeExam, setActiveExam] = useState<typeof mockExam | null>(null);
 
   const filteredExams = exams.filter((exam) =>
     exam.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleStartExam = (examId: number) => {
+    // In a real application, we would fetch the exam details from the API
+    // For now, we're using the mock exam
+    setActiveExam(mockExam);
+  };
+
+  const handleExamComplete = (result: any) => {
+    // In a real application, we would send the results to the API
+    console.log("Exam completed:", result);
+    setActiveExam(null);
+  };
+
+  if (activeExam) {
+    return <ExamPractice exam={activeExam} onComplete={handleExamComplete} />;
+  }
 
   return (
     <div
@@ -63,7 +82,10 @@ const Dashboard = ({ exams }: DashboardProps) => {
                 <p>Questions: {exam.totalQuestions}</p>
                 <p>Time Limit: {exam.timeLimit} minutes</p>
               </div>
-              <button className="mt-4 w-full btn-primary">
+              <button
+                className="mt-4 w-full btn-primary"
+                onClick={() => handleStartExam(exam.id)}
+              >
                 Start Practice
               </button>
             </div>
