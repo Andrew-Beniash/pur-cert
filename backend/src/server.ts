@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
-import { authRouter } from "./controllers/auth.controller";
+import { authRouter } from "./routes/auth.routes";
 import { getPool } from "./config/database";
 
-const app = express();
+export const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(cors());
@@ -31,4 +31,7 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Only start the server if this file is being run directly
+if (require.main === module) {
+  startServer();
+}

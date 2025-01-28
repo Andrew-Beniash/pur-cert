@@ -1,110 +1,140 @@
-import { createUser } from "../models/user.model";
-import { handleGoogleAuth } from "../controllers/auth.controller";
-import { Request, Response } from "express";
-import { getPool } from "../config/database";
+import { describe, expect, jest, beforeEach, it } from "@jest/globals";
+import request from "supertest";
+import { app } from "../server";
+import { createUser, User } from "../models/user.model";
 
-jest.mock("../config/database", () => ({
-  getPool: jest.fn(() => ({
-    query: jest.fn(),
-  })),
-}));
+// Mock environment variables
+process.env.GOOGLE_CLIENT_ID = "test-client-id";
+process.env.GOOGLE_CALLBACK_URL = "http://localhost:3000/auth/google/callback";
 
-jest.mock("../models/user.model", () => ({
-  createUser: jest.fn(),
-}));
+// Mock the createUser function
+jest.mock("../models/user.model");
+const mockedCreateUser = jest.mocked(createUser);
 
 describe("Auth Controller", () => {
-  let mockReq: Partial<Request>;
-  let mockRes: Partial<Response>;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRes = {
-      json: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-    };
-    mockReq = {
-      body: {
-        user: {
-          email: "test@example.com",
-          name: "Test User",
-        },
-        account: {
-          providerAccountId: "12345",
-        },
-      },
-    };
   });
 
-  it("should store user data after successful Google authentication", async () => {
-    const mockUser = {
-      id: "uuid-1",
-      email: "test@example.com",
-      name: "Test User",
-      google_id: "12345",
-      created_at: new Date(),
-    };
+  describe("GET /auth/google", () => {
+    it("should redirect to Google OAuth URL", async () => {
+      const response = await request(app).get("/auth/google");
 
-    (createUser as jest.Mock).mockResolvedValueOnce(mockUser);
-
-    await handleGoogleAuth(mockReq as Request, mockRes as Response);
-
-    expect(createUser).toHaveBeenCalledWith({
-      email: "test@example.com",
-      name: "Test User",
-      google_id: "12345",
-    });
-    expect(mockRes.status).toHaveBeenCalledWith(200);
-    expect(mockRes.json).toHaveBeenCalledWith({
-      success: true,
-      user: mockUser,
+      expect(response.status).toBe(302); // Redirect status
+      expect(response.header.location).toContain(
+        "accounts.google.com/o/oauth2/v2/auth"
+      );
+      expect(response.header.location).toContain("test-client-id");
     });
   });
 
-  it("should handle invalid user data", async () => {
-    mockReq.body = { user: {}, account: {} };
+  describe("GET /auth/google/callback", () => {
+    it("should handle valid authorization code", async () => {
+      const response = await request(app)
+        .get("/auth/google/callback")
+        .query({ code: "valid-auth-code" });
 
-    await handleGoogleAuth(mockReq as Request, mockRes as Response);
+      expect(response.status).toBe(302); // Redirect status
+      expect(response.header.location).toBe("/auth/success");
+    });
 
-    expect(createUser).not.toHaveBeenCalled();
-    expect(mockRes.status).toHaveBeenCalledWith(400);
-    expect(mockRes.json).toHaveBeenCalledWith({ error: "Invalid user data" });
-  });
+    it("should handle missing authorization code", async () => {
+      const response = await request(app).get("/auth/google/callback");
 
-  it("should handle database errors", async () => {
-    (createUser as jest.Mock).mockRejectedValueOnce(
-      new Error("Database error")
-    );
-
-    await handleGoogleAuth(mockReq as Request, mockRes as Response);
-
-    expect(mockRes.status).toHaveBeenCalledWith(500);
-    expect(mockRes.json).toHaveBeenCalledWith({
-      error: "Failed to store user data",
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: "Invalid authorization code",
+      });
     });
   });
 
-  it("should handle missing email", async () => {
-    mockReq.body = {
-      user: { name: "Test User" },
-      account: { providerAccountId: "12345" },
-    };
+  describe("POST /auth/google/user", () => {
+    it("should create a new user with valid Google data", async () => {
+      const mockUser = {
+        email: "test@example.com",
+        name: "Test User",
+      };
 
-    await handleGoogleAuth(mockReq as Request, mockRes as Response);
+      const mockAccount = {
+        providerAccountId: "google123",
+      };
 
-    expect(createUser).not.toHaveBeenCalled();
-    expect(mockRes.status).toHaveBeenCalledWith(400);
-  });
+      const mockDbUser: User = {
+        id: "1",
+        email: mockUser.email,
+        name: mockUser.name,
+        google_id: mockAccount.providerAccountId,
+        created_at: new Date(),
+      };
 
-  it("should handle missing provider ID", async () => {
-    mockReq.body = {
-      user: { email: "test@example.com", name: "Test User" },
-      account: {},
-    };
+      mockedCreateUser.mockResolvedValueOnce(mockDbUser);
 
-    await handleGoogleAuth(mockReq as Request, mockRes as Response);
+      const response = await request(app)
+        .post("/auth/google/user")
+        .send({ user: mockUser, account: mockAccount });
 
-    expect(createUser).not.toHaveBeenCalled();
-    expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        success: true,
+        user: expect.objectContaining({
+          email: mockUser.email,
+          name: mockUser.name,
+          google_id: mockAccount.providerAccountId,
+        }),
+      });
+
+      expect(mockedCreateUser).toHaveBeenCalledWith({
+        email: mockUser.email,
+        name: mockUser.name,
+        google_id: mockAccount.providerAccountId,
+      });
+    });
+
+    it("should return 400 if email is missing", async () => {
+      const mockUser = {
+        name: "Test User",
+      };
+
+      const mockAccount = {
+        providerAccountId: "google123",
+      };
+
+      const response = await request(app)
+        .post("/auth/google/user")
+        .send({ user: mockUser, account: mockAccount });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        error: "Invalid user data",
+      });
+      expect(mockedCreateUser).not.toHaveBeenCalled();
+    });
+
+    it("should return 500 if database operation fails", async () => {
+      const mockUser = {
+        email: "test@example.com",
+        name: "Test User",
+      };
+
+      const mockAccount = {
+        providerAccountId: "google123",
+      };
+
+      mockedCreateUser.mockRejectedValueOnce(new Error("Database error"));
+
+      const response = await request(app)
+        .post("/auth/google/user")
+        .send({ user: mockUser, account: mockAccount });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({
+        error: "Failed to store user data",
+      });
+      expect(mockedCreateUser).toHaveBeenCalledWith({
+        email: mockUser.email,
+        name: mockUser.name,
+        google_id: mockAccount.providerAccountId,
+      });
+    });
   });
 });
