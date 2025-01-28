@@ -14,6 +14,7 @@ const customJestConfig = {
     "^@/app/(.*)$": "<rootDir>/src/app/$1",
   },
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/"],
+  testMatch: ["**/*.test.ts", "**/*.test.tsx"],
 };
 
 module.exports = createJestConfig(customJestConfig);
