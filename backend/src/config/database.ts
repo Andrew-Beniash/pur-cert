@@ -10,21 +10,25 @@ export const getPool = async (): Promise<Pool> => {
 
   const isProduction = process.env.NODE_ENV === "production";
 
-  const config = {
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: parseInt(process.env.DB_PORT || "5432"),
-    // Only use SSL in production
-    ssl: isProduction
-      ? {
-          rejectUnauthorized: false,
-        }
-      : false,
-  };
-
-  pool = new Pool(config);
+  // Use DATABASE_URL for Neon connection
+  if (process.env.DATABASE_URL) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
+  } else {
+    // Fallback to local configuration
+    pool = new Pool({
+      user: process.env.DB_USER,
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      password: process.env.DB_PASSWORD,
+      port: parseInt(process.env.DB_PORT || "5432"),
+      ssl: isProduction ? { rejectUnauthorized: false } : false,
+    });
+  }
 
   // Test the connection
   try {
